@@ -89,6 +89,11 @@
   .yours{
     margin-top:12px;padding-top:11px;border-top:1px solid var(--line);
     display:flex;justify-content:space-between;align-items:baseline;font-size:16px;
+    gap:10px;flex-wrap:wrap;
+  }
+  .calc{
+    margin-left:auto;font-size:14px;color:var(--ink2);
+    font-variant-numeric:tabular-nums;white-space:nowrap;
   }
   .yours b{font-size:19px;font-variant-numeric:tabular-nums}
 
@@ -311,9 +316,9 @@ function render(){
     h +=   '<div class="ctl">';
     if(qty > 1){
       h += '<div class="row"><span class="lbl">How many</span><div class="step">' +
-           '<button data-step="'+idx+'|-1" aria-label="one fewer">\u2212</button>' +
+           '<button id="d'+idx+'" data-step="'+idx+'|-1" aria-label="one fewer">\u2212</button>' +
            '<div class="val" id="u'+idx+'">1</div>' +
-           '<button data-step="'+idx+'|1" aria-label="one more">+</button>' +
+           '<button id="p'+idx+'" data-step="'+idx+'|1" aria-label="one more">+</button>' +
            '</div><span class="of">of '+qty+'</span></div>';
     }
     h += '<div class="row"><span class="lbl">Split it</span><div class="chips">' +
@@ -322,7 +327,9 @@ function render(){
       h += '<button class="chip" data-div="'+idx+'|'+f+'">'+GLYPH[f]+'<small>'+f+' ways</small></button>';
     });
     h += '</div></div>';
-    h += '<div class="yours"><span>Your share</span><b id="y'+idx+'">'+money(line/qty)+'</b></div>';
+    h += '<div class="yours"><span>Your share</span>' +
+         '<span class="calc" id="c'+idx+'"></span>' +
+         '<b id="y'+idx+'">'+money(unit)+'</b></div>';
     h +=   '</div>';
     h += '</div>';
   });
@@ -348,7 +355,11 @@ function recalc(){
 
   BILL.i.forEach(function(it, i){
     var el = $('y'+i); if(el) el.textContent = money(itemShare(i));
-    var u = $('u'+i); if(u) u.textContent = fmtUnits(STATE[i]);
+    var u = $('u'+i); if(u) u.textContent = STATE[i].units;
+    var c = $('c'+i); if(c) c.textContent = calcText(i);
+    var dec = $('d'+i), inc = $('p'+i);
+    if(dec) dec.disabled = STATE[i].units <= 1;
+    if(inc) inc.disabled = STATE[i].units >= BILL.i[i][2];
   });
 
   $('totv').textContent = money(total);
@@ -369,6 +380,13 @@ function recalc(){
   save();
   if(HOST) tally();
   return total;
+}
+function calcText(i){
+  var st = STATE[i], unit = BILL.i[i][1];
+  if(!st.on) return '';
+  if(st.units === 1 && st.div === 1) return '';
+  return (st.units > 1 ? st.units + ' \u00d7 ' : '') + money(unit) +
+         (st.div > 1 ? ' \u00f7 ' + st.div : '');
 }
 function fmtUnits(s){
   var v = s.units / s.div;
